@@ -33,7 +33,7 @@ import { parsearNumero } from './cotizador.js';
 import { simularPago, generarPoliza, textoPoliza } from './pago.js';
 import { PRODUCTOS } from './productos.js';
 import { formatearTarjeta, formatearVencimiento, posicionCursor } from './mascaras.js';
-import { cargarSolicitud, borrarSolicitud } from './persistencia.js';
+import { cargarSolicitud, borrarSolicitud, guardarSolicitud } from './persistencia.js';
 import { iniciarTema, alternarTema } from './tema.js';
 
 // campo → función pura que valida su valor actual (pago.metodo no se valida: siempre tiene opción elegida)
@@ -229,6 +229,17 @@ const ACCIONES = {
     reiniciarSolicitud();
     borrarSolicitud();
     irAPaso(PASO_INICIO);
+  },
+  // Logo: inicio conservando los datos; desde el éxito equivale a "Volver al inicio" (reinicia)
+  logo: () => {
+    if (solicitud.procesando || solicitud.paso === PASO_INICIO) return;
+    if (solicitud.paso === PASO_EXITO) {
+      ACCIONES.reiniciar();
+      return;
+    }
+    solicitud.volverAPago = false;
+    irAPaso(PASO_INICIO);
+    guardarSolicitud(solicitud); // render() no guarda en el inicio; así F5 también muestra el inicio
   },
   descargar: descargarPoliza,
   tema: alternarTema,

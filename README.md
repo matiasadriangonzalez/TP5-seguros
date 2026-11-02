@@ -56,11 +56,12 @@ cubri-seguros/
 - **Una sola función de cuota.** `calcularCuota(valor, tasaAnual, factor)` se usa en las cards de plan, en el resumen y en la barra mobile; el factor lo decide el producto (`factorDeEquipo`). Los números se convierten con `Number()` después de quitar todo lo que no sea dígito, y la moneda se formatea con `Intl.NumberFormat("es-AR")`.
 - **Resumen generado una vez.** `renderResumen()` rellena un único `<aside id="resumen">`. En mobile es una barra fija arriba del botón desde el paso 2. En el paso 4 (resumen final) ese mismo elemento se muestra completo (seguro, equipo, plan, titular y total) arriba del botón de pago; en desktop es siempre la card lateral (`lg:grid-cols-[1fr_380px]`).
 - **Validaciones como funciones puras.** Se muestran al salir del campo (`blur`) y, si el campo ya tenía error, se revalidan mientras se corrige. Al intentar avanzar se revalidan todos los campos del paso y se enfoca el primero con error. Los campos sin validación (medio de pago) se ignoran.
-- **Botón deshabilitado con explicación.** El botón principal queda `disabled` hasta que el paso es válido y se muestra qué falta completar. Como un botón deshabilitado no recibe clicks, una capa transparente encima permite "intentar avanzar" y ver los errores; Enter dentro de un campo hace lo mismo.
+- **Botón deshabilitado con explicación.** El botón principal queda `disabled` hasta que el paso es válido y se muestra qué falta completar (en modo oscuro tiene relleno apagado y borde punteado para distinguirlo de uno activo). Como un botón deshabilitado no recibe clicks, una capa transparente encima permite "intentar avanzar" y ver los errores; Enter dentro de un campo hace lo mismo.
 - **Accesibilidad.** `<label for>` en cada input, errores con `aria-invalid`, `aria-describedby` y `role="alert"`, foco al primer campo inválido o al título del paso, y botón de tema con `aria-label` y `aria-pressed`.
 - **Pago simulado.** `simularPago()` espera 1,5 s; el botón pasa a "Procesando…" y queda deshabilitado, y solo se vuelve a habilitar si el pago falla. `4000 0000 0000 0002` se rechaza; cualquier otro número válido se aprueba. La póliza usa el formato `POL-AAAA-NNNNNN` con un contador en memoria.
 - **Vencimiento de tarjeta.** Una tarjeta vale hasta el último día del mes indicado, así que el mes en curso se acepta y los anteriores no.
 - **Nombre y apellido.** La regla dice "mínimo 2 letras" con un único mensaje; se usa "Ingresá tu nombre" / "Ingresá tu apellido" según el campo.
+- **Logo.** El logo del encabezado es un botón ("Ir al inicio"). Desde los pasos 1 a 4 y desde el error vuelve al inicio sin perder los datos de `solicitud` (y cancela una edición pendiente de "Editar"); desde el éxito hace lo mismo que "Volver al inicio" y reinicia la solicitud. Mientras se procesa el pago no hace nada.
 - **Modelo del equipo.** Sigue siendo texto libre de 2 a 40 caracteres (como pide el enunciado). La lista de sugerencias (`<datalist>`) solo ayuda a escribirlo: se llena según la marca elegida y no restringe lo que se escribe. Cómo se muestra la lista depende del navegador.
 
 ### Diferencias entre el Figma y el enunciado
@@ -79,14 +80,14 @@ Se hicieron seis. No se hizo "Vite + GitHub Actions".
 
 1. **Persistencia.** La solicitud se guarda en `localStorage` (con `try/catch`: si no hay almacenamiento, la app funciona igual) y se restaura al recargar, volviendo al paso donde quedó la persona. Se borra al terminar la contratación y con "Volver al inicio". **Nunca se guardan el número de tarjeta, el CVV ni el vencimiento**: `datosPersistibles()` arma el objeto con una lista blanca y los tests lo verifican. Por eso, después de recargar en el paso de pago hay que volver a escribir esos tres datos.
 2. **Editar desde el resumen.** En el paso 4, el resumen tiene enlaces "Editar" (equipo, plan, titular). Llevan al paso correspondiente con los datos cargados y, al continuar, vuelven directo al pago (clave `volverAPago` del estado). "Volver" durante la edición cancela y regresa al pago.
-3. **Toast de Basecoat** al confirmar el pago. Se carga solo `toast.min.js` de `basecoat-css@1.1.0` (mismo paquete y versión que el CSS). Ese archivo solo se inicializa si existe `window.basecoat.register`, que normalmente aporta el núcleo `basecoat.js`; como el enunciado pide cargar únicamente el JS del toast, `js/basecoat-shim.js` provee ese `register` mínimo. Si el CDN no carga, el toast simplemente no aparece.
+3. **Toast de Basecoat** al confirmar el pago. Se carga solo `toast.min.js` de `basecoat-css@1.1.0` (mismo paquete y versión que el CSS). Ese archivo solo se inicializa si existe `window.basecoat.register`, que normalmente aporta el núcleo `basecoat.js`; como el enunciado pide cargar únicamente el JS del toast, `js/basecoat-shim.js` provee ese `register` mínimo. El toast se descarta al salir de la pantalla de éxito ("Volver al inicio" o cualquier otro cambio de paso), así que no pasa a una compra nueva. En mobile se ubica arriba, debajo del encabezado. Si el CDN no carga, el toast simplemente no aparece.
 4. **Otro producto: Bicicleta**, con el mismo flujo, sus propios campos y su propia tabla de tasas en `data/planes-bicicleta.json` (3 %, 5 % y 8 % anual). En lugar de la antigüedad se elige el tipo de bicicleta, que actúa como factor (urbana 1,00 · montaña 1,15 · ruta 1,20 · eléctrica 1,35), y el valor va de $50.000 a $3.000.000. **Estas tasas, factores y rangos son inventados para el TP**, no salen del enunciado. `data/planes.json` y el comportamiento del celular no cambiaron.
 5. **Máscaras de input.** Tarjeta en grupos de 4 y vencimiento con barra automática (aparece al escribir el tercer dígito, para poder borrarla). El cursor se mantiene junto al mismo dígito al editar en el medio. Las validaciones siguen ignorando los espacios.
 6. **Modo oscuro** con las variables de Basecoat (clase `.dark` en `<html>`). Parte de `prefers-color-scheme`, tiene un botón visible (icono de luna/sol) y recuerda la preferencia en `localStorage`.
 
 ## Capturas
 
-Mobile (390 px) a la izquierda y desktop (1440 px) a la derecha. Generadas con un navegador automatizado; todas están en [`capturas/`](capturas/).
+Mobile (390 px) a la izquierda y desktop (1440 px) a la derecha. Generadas con Chromium automatizado en idioma y zona horaria es-AR (las fechas salen día/mes/año; el texto de relleno del campo de fecha lo pone el navegador y se ve como `dd/mm/yyyy`); todas están en [`capturas/`](capturas/).
 
 | Pantalla | Mobile · 390 | Desktop · 1440 |
 | --- | --- | --- |
@@ -104,6 +105,7 @@ Bonus:
 
 | Bonus | Mobile · 390 | Desktop · 1440 |
 | --- | --- | --- |
+| Éxito, con el toast de Basecoat visible | <img src="capturas/mobile-17-exito-toast.png" width="200" alt="Éxito con toast, mobile"> | <img src="capturas/desktop-17-exito-toast.png" width="520" alt="Éxito con toast, desktop"> |
 | Bicicleta · cotizar | <img src="capturas/mobile-09-bicicleta-cotizar.png" width="200" alt="Bicicleta, cotizar, mobile"> | <img src="capturas/desktop-09-bicicleta-cotizar.png" width="520" alt="Bicicleta, cotizar, desktop"> |
 | Bicicleta · plan | <img src="capturas/mobile-10-bicicleta-plan.png" width="200" alt="Bicicleta, plan, mobile"> | <img src="capturas/desktop-10-bicicleta-plan.png" width="520" alt="Bicicleta, plan, desktop"> |
 | Modo oscuro · plan | <img src="capturas/mobile-11-oscuro-plan.png" width="200" alt="Modo oscuro, plan, mobile"> | <img src="capturas/desktop-11-oscuro-plan.png" width="520" alt="Modo oscuro, plan, desktop"> |
@@ -113,10 +115,10 @@ También están en `capturas/` las de modo oscuro de datos con errores, error de
 
 ## Sitio publicado
 
-URL: _(pendiente: completar con la URL de GitHub Pages / Netlify / Firebase Hosting)_
+URL: https://cubri-seguros.netlify.app/
 
 ## Verificación realizada
 
 - Tests con `node --test "tests/*.test.mjs"` sobre cotización (los 3 casos del enunciado y los de la bicicleta), todas las validaciones y sus mensajes, pago simulado y póliza, modelos, máscaras, persistencia (incluye que no se guarden datos de la tarjeta), tema y texto de la póliza.
-- Recorrido completo en Chromium headless a 390 y 1440 px: sin errores en la consola en modo claro y oscuro, cuotas exactas de los 3 casos, rechazo con `4000 0000 0000 0002` y "Reintentar" con datos conservados, "Volver", recarga con restauración, "Editar", bicicleta de punta a punta, máscaras y toast.
+- Recorrido completo en Chromium headless a 390 y 1440 px: sin errores en la consola en modo claro y oscuro, cuotas exactas de los 3 casos, el toast se descarta al volver al inicio, rechazo con `4000 0000 0000 0002` y "Reintentar" con datos conservados, "Volver", recarga con restauración, "Editar", bicicleta de punta a punta, máscaras y toast.
 - No se probó en Safari ni Firefox, en dispositivos reales ni con lectores de pantalla.

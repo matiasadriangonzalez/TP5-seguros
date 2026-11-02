@@ -69,15 +69,23 @@
   --color-amber-200: rgba(245, 158, 11, 0.35);
   --color-amber-700: #fbbf24;
 }
+/* Botón deshabilitado en modo oscuro: relleno apagado y texto atenuado para no confundirlo con uno activo */
+.dark .btn:disabled {
+  background-color: #1e293b;
+  border: 1px dashed #475569;
+  color: #64748b;
+  opacity: 0.8;
+}
+
 /* El tilde del paso completo va oscuro sobre el verde claro del modo oscuro */
 .dark .punto-paso.bg-emerald-600 {
   color: #04261b;
 }
 
-/* Toasts: arriba en mobile para no tapar los botones fijos de abajo */
+/* Toasts: arriba en mobile (debajo del encabezado de 56px) para no tapar el logo, el botón de tema ni los botones fijos de abajo */
 @media (max-width: 1023px) {
   .toaster {
-    top: 0;
+    top: 3.5rem;
     bottom: auto;
     flex-direction: column;
   }

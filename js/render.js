@@ -106,11 +106,17 @@ export function render(opciones = {}) {
   renderSalidas();
 
   if (pasoAnterior !== null && pasoAnterior !== paso) {
+    // El toast de "Pago aprobado" pertenece a la pantalla de éxito: no debe pasar a otro flujo
+    if (pasoAnterior === 5) descartarToasts();
     window.scrollTo(0, 0);
     enfocarTitulo();
   }
   pasoAnterior = paso;
   persistir();
+}
+
+function descartarToasts() {
+  document.querySelectorAll('#toaster .toast').forEach((toast) => toast.remove());
 }
 
 // Persistencia: el éxito la borra; el resto se guarda sin datos sensibles (ver persistencia.js)
