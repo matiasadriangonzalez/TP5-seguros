@@ -1,0 +1,8 @@
+[
+  { "id": "basico",  "nombre": "Básico",  "tasaAnual": 0.03,
+    "coberturas": ["Robo total"] },
+  { "id": "plus",    "nombre": "Plus",    "tasaAnual": 0.05, "recomendado": true,
+    "coberturas": ["Robo total", "Daños por accidente"] },
+  { "id": "premium", "nombre": "Premium", "tasaAnual": 0.08,
+    "coberturas": ["Robo total", "Daños por accidente", "Asistencia en ruta"] }
+]
