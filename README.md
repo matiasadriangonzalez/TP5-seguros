@@ -86,22 +86,30 @@ Se hicieron seis. No se hizo "Vite + GitHub Actions".
 
 ## Capturas
 
-Generadas con un navegador automatizado; están en [`capturas/`](capturas/) con el prefijo `mobile-` (390 px) o `desktop-` (1440 px):
+Mobile (390 px) a la izquierda y desktop (1440 px) a la derecha. Generadas con un navegador automatizado; todas están en [`capturas/`](capturas/).
 
-| Pantalla | Archivo (sufijo) |
-| --- | --- |
-| 01 · Inicio | `01-inicio` |
-| 02 · Cotizar (con errores / completo) | `02-cotizar-errores`, `02-cotizar` |
-| 03 · Plan | `03-plan` |
-| 04 · Datos (con errores) | `04-datos-errores` |
-| 05 · Pago | `05-pago` |
-| 05 · Pago, resumen final | `08-pago-resumen-final` |
-| 06 · Éxito (con toast, si todavía está visible) | `06-exito` |
-| 07 · Error de pago | `07-error` |
-| Bicicleta | `09-bicicleta-cotizar`, `10-bicicleta-plan` |
-| Modo oscuro | `11-oscuro-plan`, `12-oscuro-datos-error`, `13-oscuro-pago`, `14-oscuro-error`, `15-oscuro-exito`, `16-oscuro-inicio` |
+| Pantalla | Mobile · 390 | Desktop · 1440 |
+| --- | --- | --- |
+| 01 · Inicio | <img src="capturas/mobile-01-inicio.png" width="200" alt="Inicio, mobile"> | <img src="capturas/desktop-01-inicio.png" width="520" alt="Inicio, desktop"> |
+| 02 · Cotizar | <img src="capturas/mobile-02-cotizar.png" width="200" alt="Cotizar, mobile"> | <img src="capturas/desktop-02-cotizar.png" width="520" alt="Cotizar, desktop"> |
+| 02 · Cotizar, con errores | <img src="capturas/mobile-02-cotizar-errores.png" width="200" alt="Cotizar con errores, mobile"> | <img src="capturas/desktop-02-cotizar-errores.png" width="520" alt="Cotizar con errores, desktop"> |
+| 03 · Elegir plan | <img src="capturas/mobile-03-plan.png" width="200" alt="Elegir plan, mobile"> | <img src="capturas/desktop-03-plan.png" width="520" alt="Elegir plan, desktop"> |
+| 04 · Datos personales, con errores | <img src="capturas/mobile-04-datos-errores.png" width="200" alt="Datos personales con errores, mobile"> | <img src="capturas/desktop-04-datos-errores.png" width="520" alt="Datos personales con errores, desktop"> |
+| 05 · Pago | <img src="capturas/mobile-05-pago.png" width="200" alt="Pago, mobile"> | <img src="capturas/desktop-05-pago.png" width="520" alt="Pago, desktop"> |
+| 05 · Pago, resumen final | <img src="capturas/mobile-08-pago-resumen-final.png" width="200" alt="Resumen final, mobile"> | <img src="capturas/desktop-08-pago-resumen-final.png" width="520" alt="Resumen final, desktop"> |
+| 06 · Éxito | <img src="capturas/mobile-06-exito.png" width="200" alt="Éxito, mobile"> | <img src="capturas/desktop-06-exito.png" width="520" alt="Éxito, desktop"> |
+| 07 · Error de pago | <img src="capturas/mobile-07-error.png" width="200" alt="Error de pago, mobile"> | <img src="capturas/desktop-07-error.png" width="520" alt="Error de pago, desktop"> |
 
-> Pendiente para la entrega: reemplazar o completar las capturas con las del sitio publicado si hace falta.
+Bonus:
+
+| Bonus | Mobile · 390 | Desktop · 1440 |
+| --- | --- | --- |
+| Bicicleta · cotizar | <img src="capturas/mobile-09-bicicleta-cotizar.png" width="200" alt="Bicicleta, cotizar, mobile"> | <img src="capturas/desktop-09-bicicleta-cotizar.png" width="520" alt="Bicicleta, cotizar, desktop"> |
+| Bicicleta · plan | <img src="capturas/mobile-10-bicicleta-plan.png" width="200" alt="Bicicleta, plan, mobile"> | <img src="capturas/desktop-10-bicicleta-plan.png" width="520" alt="Bicicleta, plan, desktop"> |
+| Modo oscuro · plan | <img src="capturas/mobile-11-oscuro-plan.png" width="200" alt="Modo oscuro, plan, mobile"> | <img src="capturas/desktop-11-oscuro-plan.png" width="520" alt="Modo oscuro, plan, desktop"> |
+| Modo oscuro · pago | <img src="capturas/mobile-13-oscuro-pago.png" width="200" alt="Modo oscuro, pago, mobile"> | <img src="capturas/desktop-13-oscuro-pago.png" width="520" alt="Modo oscuro, pago, desktop"> |
+
+También están en `capturas/` las de modo oscuro de datos con errores, error de pago, éxito e inicio (`12`, `14`, `15` y `16`).
 
 ## Sitio publicado
 
