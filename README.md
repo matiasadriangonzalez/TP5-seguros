@@ -1,0 +1,114 @@
+# Cubrí Seguros · Flujo de contratación digital
+
+Checkout de seguros (TP5 · Diseño UXUI 2026). HTML5 + Tailwind CSS v4 (CDN) + Basecoat UI (CSS, y solo el JS del toast) + JavaScript vanilla con módulos ES. No hay backend: los planes salen de archivos JSON locales y el pago es una función que simula la respuesta.
+
+Productos: **Celular** (el del enunciado) y **Bicicleta** (bonus). Hogar y Viaje figuran como "Próximamente".
+
+## Cómo correrlo
+
+`index.html` carga los planes con `fetch`, así que **no funciona abriéndolo con doble click (`file://`)**. Hace falta un servidor local:
+
+```bash
+cd cubri-seguros
+npx serve          # o: python3 -m http.server 8000
+```
+
+Después abrí la URL que muestre el servidor (por ejemplo `http://localhost:3000`). Si el JSON no se puede cargar, el paso 1 muestra un aviso explicando esto. Tailwind, Basecoat, el toast de Basecoat y la fuente Inter se cargan desde CDN, por lo que hace falta conexión a internet.
+
+Tests de las funciones puras, con Node 22 o superior (probado con Node 24) y sin dependencias:
+
+```bash
+node --test "tests/*.test.mjs"
+```
+
+## Estructura
+
+```
+cubri-seguros/
+├── index.html              7 pantallas como <section data-paso> (0 a 6)
+├── css/tokens.css          tokens del Figma sobre las variables de Basecoat, ajustes y modo oscuro
+├── data/
+│   ├── planes.json         Básico, Plus (recomendado) y Premium del celular (tal cual el enunciado)
+│   └── planes-bicicleta.json   tabla de tasas propia de la bicicleta
+├── js/
+│   ├── app.js              arranque, eventos y navegación
+│   ├── estado.js           objeto `solicitud` + irAPaso(), cargarPlanes(), elegirProducto()
+│   ├── render.js           pinta cada paso desde el estado (stepper, resumen, planes)
+│   ├── validaciones.js     funciones puras: reciben un valor y devuelven mensaje o null
+│   ├── cotizador.js        calcularCuota() (única función de cuota) y formatos de número/moneda
+│   ├── pago.js             simularPago(), generarPoliza() y textoPoliza()
+│   ├── productos.js        catálogo de productos: rangos de valor, marcas, factores, textos
+│   ├── modelos.js          sugerencias de modelos por marca (modelosDeMarca)
+│   ├── mascaras.js         máscaras de tarjeta y vencimiento
+│   ├── persistencia.js     guardado en localStorage sin datos sensibles
+│   ├── tema.js             modo claro/oscuro
+│   ├── tema-inicial.js     script clásico que aplica el tema antes de pintar
+│   └── basecoat-shim.js    shim mínimo para usar solo toast.js de Basecoat
+├── tests/                  node:test sobre las funciones puras
+├── capturas/               capturas mobile (390) y desktop (1440), en claro y oscuro
+└── README.md
+```
+
+## Decisiones tomadas
+
+- **Un único estado.** Todo vive en `solicitud` (`paso`, `equipo`, `plan`, `titular`, `pago`, `poliza`). Se agregaron claves al mismo objeto: `producto`, `equipo.tipo` (reemplaza a `antiguedad` en la bicicleta), `volverAPago`, y las de interfaz `errores`, `procesando`, `motivoError` y `errorPlanes`. Cada evento modifica el estado y llama a `render()`; el DOM nunca se usa para leer datos.
+- **Inputs rellenados desde el estado** en `render()`, por eso "Volver" y "Reintentar pago" conservan los datos. Mientras se escribe en un campo, `render()` no lo pisa.
+- **Una sola función de cuota.** `calcularCuota(valor, tasaAnual, factor)` se usa en las cards de plan, en el resumen y en la barra mobile; el factor lo decide el producto (`factorDeEquipo`). Los números se convierten con `Number()` después de quitar todo lo que no sea dígito, y la moneda se formatea con `Intl.NumberFormat("es-AR")`.
+- **Resumen generado una vez.** `renderResumen()` rellena un único `<aside id="resumen">`. En mobile es una barra fija arriba del botón desde el paso 2. En el paso 4 (resumen final) ese mismo elemento se muestra completo (seguro, equipo, plan, titular y total) arriba del botón de pago; en desktop es siempre la card lateral (`lg:grid-cols-[1fr_380px]`).
+- **Validaciones como funciones puras.** Se muestran al salir del campo (`blur`) y, si el campo ya tenía error, se revalidan mientras se corrige. Al intentar avanzar se revalidan todos los campos del paso y se enfoca el primero con error. Los campos sin validación (medio de pago) se ignoran.
+- **Botón deshabilitado con explicación.** El botón principal queda `disabled` hasta que el paso es válido y se muestra qué falta completar. Como un botón deshabilitado no recibe clicks, una capa transparente encima permite "intentar avanzar" y ver los errores; Enter dentro de un campo hace lo mismo.
+- **Accesibilidad.** `<label for>` en cada input, errores con `aria-invalid`, `aria-describedby` y `role="alert"`, foco al primer campo inválido o al título del paso, y botón de tema con `aria-label` y `aria-pressed`.
+- **Pago simulado.** `simularPago()` espera 1,5 s; el botón pasa a "Procesando…" y queda deshabilitado, y solo se vuelve a habilitar si el pago falla. `4000 0000 0000 0002` se rechaza; cualquier otro número válido se aprueba. La póliza usa el formato `POL-AAAA-NNNNNN` con un contador en memoria.
+- **Vencimiento de tarjeta.** Una tarjeta vale hasta el último día del mes indicado, así que el mes en curso se acepta y los anteriores no.
+- **Nombre y apellido.** La regla dice "mínimo 2 letras" con un único mensaje; se usa "Ingresá tu nombre" / "Ingresá tu apellido" según el campo.
+- **Modelo del equipo.** Sigue siendo texto libre de 2 a 40 caracteres (como pide el enunciado). La lista de sugerencias (`<datalist>`) solo ayuda a escribirlo: se llena según la marca elegida y no restringe lo que se escribe. Cómo se muestra la lista depende del navegador.
+
+### Diferencias entre el Figma y el enunciado
+
+Para el comportamiento y las reglas de negocio se siguió el PDF; para lo visual, el Figma.
+
+- Hogar y Viaje no muestran el precio "desde" del Figma, porque deben estar deshabilitados con "Próximamente". Bicicleta pasó a estar habilitada por el bonus.
+- En mobile el Figma muestra una card de resumen dentro del paso de pago; el enunciado pide un único resumen generado por `renderResumen()`. En el paso 4 mobile ese resumen se muestra como card en el flujo, arriba del botón de pago (en vez de la barra fija, que se usa en los pasos 2 y 3).
+- El aviso de simulación usa `.alert` de Basecoat: ámbar en el paso de pago (como en el Figma) y variante `destructive` en la pantalla de error, con el motivo tomado del estado.
+- "Descargar póliza" (del Figma de éxito) genera un `.txt` de demostración en el navegador con el nombre del plan y la cuota.
+- En mobile el Figma no tiene encabezado en las pantallas de éxito y error; acá se muestra para poder llegar al botón de modo oscuro.
+
+## Bonus (sección 12 del enunciado)
+
+Se hicieron seis. No se hizo "Vite + GitHub Actions".
+
+1. **Persistencia.** La solicitud se guarda en `localStorage` (con `try/catch`: si no hay almacenamiento, la app funciona igual) y se restaura al recargar, volviendo al paso donde quedó la persona. Se borra al terminar la contratación y con "Volver al inicio". **Nunca se guardan el número de tarjeta, el CVV ni el vencimiento**: `datosPersistibles()` arma el objeto con una lista blanca y los tests lo verifican. Por eso, después de recargar en el paso de pago hay que volver a escribir esos tres datos.
+2. **Editar desde el resumen.** En el paso 4, el resumen tiene enlaces "Editar" (equipo, plan, titular). Llevan al paso correspondiente con los datos cargados y, al continuar, vuelven directo al pago (clave `volverAPago` del estado). "Volver" durante la edición cancela y regresa al pago.
+3. **Toast de Basecoat** al confirmar el pago. Se carga solo `toast.min.js` de `basecoat-css@1.1.0` (mismo paquete y versión que el CSS). Ese archivo solo se inicializa si existe `window.basecoat.register`, que normalmente aporta el núcleo `basecoat.js`; como el enunciado pide cargar únicamente el JS del toast, `js/basecoat-shim.js` provee ese `register` mínimo. Si el CDN no carga, el toast simplemente no aparece.
+4. **Otro producto: Bicicleta**, con el mismo flujo, sus propios campos y su propia tabla de tasas en `data/planes-bicicleta.json` (3 %, 5 % y 8 % anual). En lugar de la antigüedad se elige el tipo de bicicleta, que actúa como factor (urbana 1,00 · montaña 1,15 · ruta 1,20 · eléctrica 1,35), y el valor va de $50.000 a $3.000.000. **Estas tasas, factores y rangos son inventados para el TP**, no salen del enunciado. `data/planes.json` y el comportamiento del celular no cambiaron.
+5. **Máscaras de input.** Tarjeta en grupos de 4 y vencimiento con barra automática (aparece al escribir el tercer dígito, para poder borrarla). El cursor se mantiene junto al mismo dígito al editar en el medio. Las validaciones siguen ignorando los espacios.
+6. **Modo oscuro** con las variables de Basecoat (clase `.dark` en `<html>`). Parte de `prefers-color-scheme`, tiene un botón visible (icono de luna/sol) y recuerda la preferencia en `localStorage`.
+
+## Capturas
+
+Generadas con un navegador automatizado; están en [`capturas/`](capturas/) con el prefijo `mobile-` (390 px) o `desktop-` (1440 px):
+
+| Pantalla | Archivo (sufijo) |
+| --- | --- |
+| 01 · Inicio | `01-inicio` |
+| 02 · Cotizar (con errores / completo) | `02-cotizar-errores`, `02-cotizar` |
+| 03 · Plan | `03-plan` |
+| 04 · Datos (con errores) | `04-datos-errores` |
+| 05 · Pago | `05-pago` |
+| 05 · Pago, resumen final | `08-pago-resumen-final` |
+| 06 · Éxito (con toast, si todavía está visible) | `06-exito` |
+| 07 · Error de pago | `07-error` |
+| Bicicleta | `09-bicicleta-cotizar`, `10-bicicleta-plan` |
+| Modo oscuro | `11-oscuro-plan`, `12-oscuro-datos-error`, `13-oscuro-pago`, `14-oscuro-error`, `15-oscuro-exito`, `16-oscuro-inicio` |
+
+> Pendiente para la entrega: reemplazar o completar las capturas con las del sitio publicado si hace falta.
+
+## Sitio publicado
+
+URL: _(pendiente: completar con la URL de GitHub Pages / Netlify / Firebase Hosting)_
+
+## Verificación realizada
+
+- Tests con `node --test "tests/*.test.mjs"` sobre cotización (los 3 casos del enunciado y los de la bicicleta), todas las validaciones y sus mensajes, pago simulado y póliza, modelos, máscaras, persistencia (incluye que no se guarden datos de la tarjeta), tema y texto de la póliza.
+- Recorrido completo en Chromium headless a 390 y 1440 px: sin errores en la consola en modo claro y oscuro, cuotas exactas de los 3 casos, rechazo con `4000 0000 0000 0002` y "Reintentar" con datos conservados, "Volver", recarga con restauración, "Editar", bicicleta de punta a punta, máscaras y toast.
+- No se probó en Safari ni Firefox, en dispositivos reales ni con lectores de pantalla.
