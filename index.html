@@ -194,12 +194,17 @@
                   <p id="equipo-marca-ayuda" data-ayuda data-texto="ayudaMarca"></p>
                   <p id="equipo-marca-error" data-error role="alert" hidden></p>
                 </div>
-                <div role="group" class="field" data-grupo="equipo.modelo">
+                <div role="group" class="field lg:relative" data-grupo="equipo.modelo">
                   <label for="equipo-modelo">Modelo</label>
-                  <input id="equipo-modelo" type="text" data-campo="equipo.modelo" aria-required="true" autocomplete="off" maxlength="40" list="modelos-lista" placeholder="Modelo del equipo">
+                  <input id="equipo-modelo" type="text" data-campo="equipo.modelo" aria-required="true" autocomplete="off" maxlength="40" placeholder="Modelo del equipo"
+                    role="combobox" aria-expanded="false" aria-controls="modelos-lista" aria-autocomplete="list" aria-haspopup="listbox">
+                  <!-- Sugerencias de modelos de la marca (js/sugerencias.js): solo ayudan, el campo sigue siendo texto libre -->
+                  <ul id="modelos-lista" role="listbox" aria-label="Modelos sugeridos" hidden
+                    class="m-0 max-h-56 list-none overflow-y-auto rounded-xl border border-slate-200 bg-surface p-1 shadow-lg lg:absolute lg:inset-x-0 lg:top-[78px] lg:z-30"></ul>
                   <p id="equipo-modelo-ayuda" data-ayuda>Elegí una sugerencia o escribilo (2 a 40 caracteres)</p>
-                  <datalist id="modelos-lista"></datalist>
-                  <p id="equipo-modelo-error" data-error role="alert" hidden></p>
+                                    <p id="equipo-modelo-error" data-error role="alert" hidden></p>
+                  <!-- Aviso suave: no bloquea ni marca el campo como inválido -->
+                  <p id="equipo-modelo-sugerencia" role="status" hidden></p>
                 </div>
                 <div role="group" class="field" data-grupo="equipo.valor">
                   <label for="equipo-valor">Valor del equipo</label>

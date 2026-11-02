@@ -11,17 +11,16 @@ function almacenamientoPorDefecto() {
   }
 }
 
+// Solo datos (no el paso): al recargar la página se vuelve siempre al inicio.
 // Lista blanca: nunca se guardan pago.tarjeta, pago.cvv ni pago.vencimiento
 export function datosPersistibles(solicitud) {
   const { equipo, titular, pago } = solicitud;
   return {
-    paso: solicitud.paso >= 1 && solicitud.paso <= 6 ? Math.min(solicitud.paso, 4) : 0,
     producto: solicitud.producto,
     equipo: { ...equipo },
     plan: solicitud.plan,
     titular: { ...titular },
     pago: { metodo: pago.metodo, titular: pago.titular },
-    volverAPago: solicitud.volverAPago === true,
   };
 }
 
@@ -34,7 +33,8 @@ function fusionarGrupo(base, guardado, tipos) {
   return resultado;
 }
 
-// Devuelve una copia de `base` con los datos guardados que tengan el tipo correcto
+// Devuelve una copia de `base` con los datos guardados que tengan el tipo correcto.
+// El paso queda como en `base` (inicio) y la edición pendiente ("Editar") siempre apagada.
 export function fusionarSolicitud(base, guardado) {
   const resultado = {
     ...base,
@@ -44,14 +44,11 @@ export function fusionarSolicitud(base, guardado) {
   };
   if (!guardado || typeof guardado !== 'object') return resultado;
 
-  if (Number.isInteger(guardado.paso) && guardado.paso >= 0 && guardado.paso <= 4) {
-    resultado.paso = guardado.paso;
-  }
   if (typeof guardado.producto === 'string' && productoValido(guardado.producto)) {
     resultado.producto = guardado.producto;
   }
   if (typeof guardado.plan === 'string') resultado.plan = guardado.plan;
-  if (typeof guardado.volverAPago === 'boolean') resultado.volverAPago = guardado.volverAPago;
+  resultado.volverAPago = false;
 
   resultado.equipo = fusionarGrupo(base.equipo, guardado.equipo, {
     marca: 'string', modelo: 'string', valor: 'number', antiguedad: 'string', tipo: 'string',

@@ -36,3 +36,24 @@ export function modelosDeMarca(marca, producto = 'celular') {
   const nombre = Object.keys(catalogo).find((m) => m.toLowerCase() === clave);
   return nombre ? [...catalogo[nombre]] : [];
 }
+
+// "  iPhone 17  PRO " → "iphone17pro": sin mayúsculas, acentos ni espacios
+export function normalizarTexto(texto) {
+  return String(texto ?? '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, '');
+}
+
+// Modelos de la marca que contienen lo escrito (todos si no se escribió nada)
+export function filtrarModelos(marca, texto, producto = 'celular') {
+  const buscado = normalizarTexto(texto);
+  return modelosDeMarca(marca, producto).filter((m) => normalizarTexto(m).includes(buscado));
+}
+
+// true si lo escrito coincide con algún modelo conocido de la marca
+export function esModeloConocido(marca, modelo, producto = 'celular') {
+  const buscado = normalizarTexto(modelo);
+  return buscado !== '' && modelosDeMarca(marca, producto).some((m) => normalizarTexto(m) === buscado);
+}

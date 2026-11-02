@@ -7,7 +7,7 @@ import {
 } from './cotizador.js';
 import { erroresDePaso, esValido } from './validaciones.js';
 import { PRODUCTOS, factorDeEquipo } from './productos.js';
-import { modelosDeMarca } from './modelos.js';
+import { modelosDeMarca, esModeloConocido } from './modelos.js';
 import { guardarSolicitud, borrarSolicitud } from './persistencia.js';
 
 export const ETIQUETAS_PASO = ['Cotizar', 'Plan', 'Datos', 'Pago'];
@@ -51,6 +51,12 @@ const SVG_CHECK_PLAN =
   '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="shrink-0"><path d="M20 6 9 17l-5-5"/></svg>';
 
 let pasoAnterior = null;
+
+// Escribe el texto solo si cambió. Reemplazar el nodo de texto de un botón en medio de un toque
+// (p. ej. el blur de un campo dispara render()) hace que WebKit/iOS pierda el click.
+function poner(elemento, texto) {
+  if (elemento.textContent !== texto) elemento.textContent = texto;
+}
 
 const $ = (selector, raiz = document) => raiz.querySelector(selector);
 const $$ = (selector, raiz = document) => [...raiz.querySelectorAll(selector)];
@@ -96,6 +102,7 @@ export function render(opciones = {}) {
   $('#encabezado').dataset.ocultoMovil = String(enCheckout);
 
   renderProducto();
+  renderAvisoModelo();
   renderCampos(opciones.forzar === true);
   renderErrores();
   renderStepper();
@@ -132,10 +139,10 @@ function renderProducto() {
   const { textos } = p;
 
   $$('[data-texto]').forEach((el) => {
-    el.textContent = textos[el.dataset.texto] ?? '';
+    poner(el, textos[el.dataset.texto] ?? '');
   });
   $$('[data-producto-nombre]').forEach((el) => {
-    el.textContent = p.nombre;
+    poner(el, p.nombre);
   });
   $$('[data-solo-producto]').forEach((el) => {
     el.hidden = el.dataset.soloProducto !== p.id;
@@ -150,18 +157,20 @@ function renderProducto() {
     marca.dataset.producto = p.id;
   }
   $('#equipo-modelo').placeholder = textos.placeholderModelo;
-  $('#equipo-valor-ayuda').textContent =
-    `Entre $${formatearNumero(p.rango.min)} y $${formatearNumero(p.rango.max)}`;
+  poner($('#equipo-valor-ayuda'), `Entre $${formatearNumero(p.rango.min)} y $${formatearNumero(p.rango.max)}`);
+}
 
-  // Sugerencias de modelos de la marca elegida (el campo sigue siendo texto libre)
-  const lista = $('#modelos-lista');
-  const clave = `${p.id}|${solicitud.equipo.marca}`;
-  if (lista.dataset.clave !== clave) {
-    lista.replaceChildren(
-      ...modelosDeMarca(solicitud.equipo.marca, p.id).map((m) => new Option(m, m)),
-    );
-    lista.dataset.clave = clave;
-  }
+// Aviso suave (no bloquea, no marca error): el modelo escrito no está entre los de la marca
+function renderAvisoModelo() {
+  const aviso = $('#equipo-modelo-sugerencia');
+  const { marca, modelo } = solicitud.equipo;
+  const desconocido = modelosDeMarca(marca, solicitud.producto).length > 0
+    && modelo.trim().length >= 2
+    && !esModeloConocido(marca, modelo, solicitud.producto);
+  aviso.hidden = !desconocido;
+  poner(aviso, desconocido
+    ? `No encontramos “${modelo.trim()}” entre los modelos de ${marca}. Si es correcto, podés continuar.`
+    : '');
 }
 
 // Rellena inputs desde el estado (así "Volver" y "Reintentar pago" conservan los datos)
@@ -191,7 +200,7 @@ function renderErrores() {
     field.toggleAttribute('data-invalid', Boolean(mensaje));
     if (error) {
       error.hidden = !mensaje;
-      error.textContent = mensaje ?? '';
+      poner(error, mensaje ?? '');
     }
     if (ayuda) ayuda.hidden = Boolean(mensaje);
 
@@ -236,8 +245,8 @@ export function renderStepper() {
 function renderTitulos() {
   const t = TITULOS[solicitud.paso];
   if (!t) return;
-  $('#topbar-titulo').textContent = t.barra;
-  $('#titulo-checkout').textContent = t.titulo ?? producto().textos.titulo;
+  poner($('#topbar-titulo'), t.barra);
+  poner($('#titulo-checkout'), t.titulo ?? producto().textos.titulo);
 }
 
 // Cards de plan: se construyen una vez por producto desde su JSON y luego solo se actualizan
@@ -252,7 +261,7 @@ function renderPlanes() {
     const card = $(`[data-plan="${plan.id}"]`, lista);
     if (!card) return;
     $('input', card).checked = plan.id === solicitud.plan;
-    $('[data-cuota]', card).textContent = plan.cuota === null ? '—' : formatearMoneda(plan.cuota);
+    poner($('[data-cuota]', card), plan.cuota === null ? '—' : formatearMoneda(plan.cuota));
   });
   $('#alerta-planes').hidden = !solicitud.errorPlanes;
 }
@@ -346,14 +355,14 @@ export function renderResumen() {
   }
 
   $('#resumen-total').hidden = total === null;
-  $('#resumen-total-valor').textContent = total === null ? '' : formatearMoneda(total);
+  poner($('#resumen-total-valor'), total === null ? '' : formatearMoneda(total));
   $('#resumen-ayuda').hidden = total !== null;
 
   const modelo = equipo.modelo.trim() || equipo.marca;
-  $('#resumen-barra-detalle').textContent = verPlan
+  poner($('#resumen-barra-detalle'), verPlan
     ? `Plan ${plan.nombre}${modelo ? ` · ${modelo}` : ''}`
-    : '';
-  $('#resumen-barra-total').textContent = total === null ? '' : `${formatearMoneda(total)}/mes`;
+    : '');
+  poner($('#resumen-barra-total'), total === null ? '' : `${formatearMoneda(total)}/mes`);
 
   // Mobile: barra compacta desde el paso 2; en el paso 4 se muestra el resumen completo
   resumen.dataset.ocultoMovil = String(total === null && !final);
@@ -372,25 +381,25 @@ export function renderAcciones() {
   const ayuda = $('#acciones-ayuda');
 
   const editando = solicitud.volverAPago && paso < 4;
-  avanzar.textContent = procesando
+  poner(avanzar, procesando
     ? 'Procesando…'
-    : editando ? 'Guardar y volver al pago' : ETIQUETAS_BOTON[paso];
+    : editando ? 'Guardar y volver al pago' : ETIQUETAS_BOTON[paso]);
   avanzar.disabled = !valido || procesando;
   $('[data-accion="intento"]').hidden = valido || procesando;
   $$('[data-accion="volver"]').forEach((b) => { b.disabled = procesando; });
 
   if (procesando) {
-    ayuda.textContent = 'Estamos procesando tu pago…';
+    poner(ayuda, 'Estamos procesando tu pago…');
     ayuda.hidden = false;
   } else if (!valido) {
     const faltan = Object.entries(errores)
       .filter(([, mensaje]) => mensaje !== null)
       .map(([campo]) => NOMBRE_CAMPO[campo]);
     const lista = new Intl.ListFormat('es', { style: 'long', type: 'conjunction' }).format(faltan);
-    ayuda.textContent = `Para continuar completá: ${lista}.`;
+    poner(ayuda, `Para continuar completá: ${lista}.`);
     ayuda.hidden = false;
   } else {
-    ayuda.textContent = '';
+    poner(ayuda, '');
     ayuda.hidden = true;
   }
 }
@@ -409,7 +418,7 @@ function renderSalidas() {
     motivo: solicitud.motivoError,
   };
   $$('[data-salida]').forEach((el) => {
-    el.textContent = salidas[el.dataset.salida] ?? '';
+    poner(el, salidas[el.dataset.salida] ?? '');
   });
 }
 

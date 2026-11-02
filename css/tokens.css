@@ -158,7 +158,8 @@ body {
 .field > input:not([type="checkbox"]):not([type="radio"]),
 .field > select {
   height: 3rem !important;
-  font-size: 15px !important;
+  /* 16px en mobile: con menos, iOS Safari hace zoom al enfocar el campo (el Figma usa 15px en desktop) */
+  font-size: 16px !important;
   background-color: var(--color-surface, #fff) !important;
   border-radius: 12px !important;
   padding-inline: 14px !important;
@@ -166,6 +167,45 @@ body {
 }
 .field > select {
   width: 100% !important;
+}
+@media (min-width: 1024px) {
+  .field > input:not([type="checkbox"]):not([type="radio"]),
+  .field > select {
+    font-size: 15px !important;
+  }
+}
+
+/* Fecha en WebKit/iOS: sin el estilo nativo (píldora gris, texto centrado) para que mida y se alinee como los demás campos */
+.field > input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+  line-height: 1.5;
+}
+.field > input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.5em;
+  margin: 0;
+  padding: 0;
+}
+.field > input[type="date"]::-webkit-datetime-edit {
+  padding: 0;
+}
+/* Solo WebKit (Safari/iOS): sin esto el valor queda pegado arriba del campo. Chromium no lo necesita. */
+@supports not (-webkit-app-region: drag) {
+  .field > input[type="date"] {
+    display: flex;
+    align-items: center;
+  }
+}
+.field > input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+.field > input[type="date"]:invalid::-webkit-datetime-edit,
+.field > input[type="date"][value=""]::-webkit-datetime-edit {
+  color: var(--muted);
 }
 .field[data-invalid] > input,
 .field[data-invalid] > select,

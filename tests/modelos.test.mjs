@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { modelosDeMarca, MODELOS } from '../js/modelos.js';
+import {
+  modelosDeMarca,
+  MODELOS,
+  normalizarTexto,
+  filtrarModelos,
+  esModeloConocido,
+} from '../js/modelos.js';
 import { PRODUCTOS } from '../js/productos.js';
 
 test('modelosDeMarca devuelve modelos reales de cada marca de celular', () => {
@@ -38,4 +44,48 @@ test('cada marca del select tiene modelos (salvo "Otra") y viceversa', () => {
     assert.deepEqual(Object.keys(MODELOS[producto]).sort(), [...marcas].sort());
     for (const marca of marcas) assert.ok(modelosDeMarca(marca, producto).length > 0, marca);
   }
+});
+
+test('normalizarTexto ignora mayúsculas, acentos y espacios', () => {
+  assert.equal(normalizarTexto('  iPhone 17  PRO '), 'iphone17pro');
+  assert.equal(normalizarTexto('Montaña Élite'), 'montanaelite');
+  assert.equal(normalizarTexto(undefined), '');
+});
+
+test('filtrarModelos sin texto devuelve todos los modelos de la marca', () => {
+  assert.deepEqual(filtrarModelos('Apple', ''), modelosDeMarca('Apple'));
+  assert.deepEqual(filtrarModelos('Apple', '   '), modelosDeMarca('Apple'));
+});
+
+test('filtrarModelos filtra por lo escrito sin importar mayúsculas, acentos ni espacios', () => {
+  assert.deepEqual(filtrarModelos('Apple', '17 pro'), ['iPhone 17 Pro', 'iPhone 17 Pro Max']);
+  assert.deepEqual(filtrarModelos('Apple', 'IPHONE17PRO'), ['iPhone 17 Pro', 'iPhone 17 Pro Max']);
+  assert.deepEqual(filtrarModelos('Samsung', 'flip'), ['Galaxy Z Flip6']);
+  assert.deepEqual(filtrarModelos('Samsung', 'zzz'), []);
+});
+
+test('filtrarModelos devuelve [] sin marca o con marca sin sugerencias', () => {
+  assert.deepEqual(filtrarModelos('', 'a'), []);
+  assert.deepEqual(filtrarModelos('Otra', 'a'), []);
+});
+
+test('filtrarModelos distingue el producto', () => {
+  assert.deepEqual(filtrarModelos('Trek', 'marlin', 'bicicleta'), ['Marlin 5']);
+  assert.deepEqual(filtrarModelos('Trek', 'marlin', 'celular'), []);
+});
+
+test('esModeloConocido compara contra los modelos de la marca elegida', () => {
+  assert.equal(esModeloConocido('Samsung', 'Galaxy S24'), true);
+  assert.equal(esModeloConocido('Samsung', ' galaxy  s24 '), true);
+  assert.equal(esModeloConocido('Samsung', 'apple 17 pro'), false);
+  assert.equal(esModeloConocido('Apple', 'iphone 17 pro'), true);
+  assert.equal(esModeloConocido('Apple', 'iPhone 17 Pro Maxx'), false);
+  assert.equal(esModeloConocido('Trek', 'marlin 5', 'bicicleta'), true);
+  assert.equal(esModeloConocido('Trek', 'marlin 5', 'celular'), false);
+});
+
+test('esModeloConocido es false sin marca, sin sugerencias o con texto vacío', () => {
+  assert.equal(esModeloConocido('', 'Galaxy S24'), false);
+  assert.equal(esModeloConocido('Otra', 'Lo que sea'), false);
+  assert.equal(esModeloConocido('Samsung', ''), false);
 });

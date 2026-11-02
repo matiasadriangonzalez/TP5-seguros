@@ -69,19 +69,24 @@ test('datosPersistibles conserva los datos no sensibles', () => {
   assert.equal(datos.pago.titular, 'Ana Gómez');
 });
 
-test('datosPersistibles guarda éxito y error como paso 4 y no guarda la póliza', () => {
+test('datosPersistibles guarda solo datos: ni paso, ni edición pendiente, ni póliza, ni estado de interfaz', () => {
   const s = completa();
   s.paso = 6;
   s.poliza = 'POL-2026-000001';
+  s.volverAPago = true;
+  s.errores = { 'equipo.marca': 'x' };
   const datos = datosPersistibles(s);
-  assert.equal(datos.paso, 4);
-  assert.ok(!('poliza' in datos));
+  for (const clave of ['paso', 'volverAPago', 'poliza', 'errores', 'procesando', 'motivoError', 'errorPlanes']) {
+    assert.ok(!(clave in datos), clave);
+  }
+  assert.equal(datos.producto, 'celular');
 });
 
 test('fusionarSolicitud restaura los campos válidos sobre el estado base', () => {
   const guardado = JSON.parse(JSON.stringify(datosPersistibles(completa())));
   const restaurada = fusionarSolicitud(base(), guardado);
-  assert.equal(restaurada.paso, 4);
+  assert.equal(restaurada.paso, 0);
+  assert.equal(restaurada.volverAPago, false);
   assert.equal(restaurada.equipo.valor, 900000);
   assert.equal(restaurada.titular.terminos, true);
   assert.equal(restaurada.pago.tarjeta, '');
@@ -136,4 +141,13 @@ test('un JSON corrupto se ignora', () => {
   const almacen = almacenFalso();
   almacen.setItem(CLAVE, '{no es json');
   assert.equal(cargarSolicitud(almacen), null);
+});
+
+test('fusionarSolicitud siempre deja el paso del estado base (inicio) y la edición apagada', () => {
+  const anterior = { ...JSON.parse(JSON.stringify(datosPersistibles(completa()))), paso: 4, volverAPago: true };
+  const restaurada = fusionarSolicitud(base(), anterior);
+  assert.equal(restaurada.paso, 0);
+  assert.equal(restaurada.volverAPago, false);
+  assert.equal(restaurada.equipo.modelo, 'Galaxy S24');
+  assert.equal(restaurada.producto, 'celular');
 });

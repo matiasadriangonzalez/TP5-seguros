@@ -33,8 +33,9 @@ import { parsearNumero } from './cotizador.js';
 import { simularPago, generarPoliza, textoPoliza } from './pago.js';
 import { PRODUCTOS } from './productos.js';
 import { formatearTarjeta, formatearVencimiento, posicionCursor } from './mascaras.js';
-import { cargarSolicitud, borrarSolicitud, guardarSolicitud } from './persistencia.js';
+import { cargarSolicitud, borrarSolicitud } from './persistencia.js';
 import { iniciarTema, alternarTema } from './tema.js';
+import { iniciarSugerencias } from './sugerencias.js';
 
 // campo → función pura que valida su valor actual (pago.metodo no se valida: siempre tiene opción elegida)
 const VALIDADORES = {
@@ -239,7 +240,6 @@ const ACCIONES = {
     }
     solicitud.volverAPago = false;
     irAPaso(PASO_INICIO);
-    guardarSolicitud(solicitud); // render() no guarda en el inicio; así F5 también muestra el inicio
   },
   descargar: descargarPoliza,
   tema: alternarTema,
@@ -285,26 +285,19 @@ function iniciarFechaMaxima() {
   campo.min = '1900-01-01';
 }
 
-// Restaura lo guardado (sin datos de la tarjeta) y vuelve al paso donde quedó la persona
-async function restaurar() {
+// Restaura solo los datos guardados (sin tarjeta, CVV ni vencimiento). La app siempre arranca
+// en el inicio; al continuar, los formularios aparecen con esos datos cargados.
+function restaurar() {
   const guardado = cargarSolicitud();
-  if (!guardado) return;
-  restaurarSolicitud(guardado);
-  if (solicitud.paso >= 2) {
-    try {
-      await cargarPlanes();
-    } catch {
-      solicitud.paso = 1;
-      solicitud.errorPlanes = true;
-    }
-  }
+  if (guardado) restaurarSolicitud(guardado);
 }
 
-async function iniciar() {
+function iniciar() {
   iniciarTema();
   iniciarFechaMaxima();
   iniciarEventos();
-  await restaurar();
+  iniciarSugerencias();
+  restaurar();
   render();
 }
 
